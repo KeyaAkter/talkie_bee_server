@@ -102,17 +102,6 @@ const findUser = async (req, res) => {
     const user = await userModel.findById(userId);
 
     res.status(200).json(user);
-  } catch {
-    res.status(500).json(err);
-  }
-};
-
-// get all users
-const getAllUsers = async (req, res) => {
-  try {
-    const users = await userModel.find({});
-
-    res.status(500).json(err);
   } catch (err) {
     res.status(500).json(err);
   }
@@ -122,5 +111,5 @@ module.exports = {
   registerUser,
   loginUser,
   findUser,
-  getAllUsers,
+  //getAllUsers,
 };
