@@ -2,6 +2,7 @@ const userModel = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const validator = require("validator");
+const mongoose = require("mongoose");
 
 // generate token
 const createToken = (_id) => {
@@ -10,9 +11,8 @@ const createToken = (_id) => {
 
 // registering user
 const registerUser = async (req, res) => {
+  const { name, email, password } = req.body;
   try {
-    const { name, email, password } = req.body;
-
     const existingUser = await userModel.findOne({ email });
 
     if (existingUser) {
@@ -54,6 +54,73 @@ const registerUser = async (req, res) => {
   }
 };
 
+// login user
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const existingUser = userModel.findOne({ email });
+
+    if (!existingUser) {
+      return res.status(400).json("Invalid email or password!");
+    }
+
+    // compairing password
+    const isValidPassword = await bcrypt.compare(
+      password,
+      existingUser.password
+    );
+
+    if (!isValidPassword) {
+      return res.status(400).json("Incorrect Password!");
+    }
+
+    // creating a new token
+    const token = createToken(existingUser._id);
+
+    res.status(200).json({
+      id: existingUser._id,
+      name: existingUser.name,
+      email,
+      password: existingUser.password,
+      token,
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+// finding an user
+const findUser = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json("Invalid Id!");
+  }
+
+  try {
+    const user = await userModel.findById(userId);
+
+    res.status(200).json(user);
+  } catch {
+    res.status(500).json(err);
+  }
+};
+
+// get all users
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await userModel.find({});
+
+    res.status(500).json(err);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
 module.exports = {
   registerUser,
+  loginUser,
+  findUser,
+  getAllUsers,
 };
