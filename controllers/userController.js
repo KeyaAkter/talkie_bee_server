@@ -9,9 +9,10 @@ const createToken = (_id) => {
   return jwt.sign({ _id }, process.env.SECRET, { expiresIn: "3d" });
 };
 
-// registering user
+// registering a user
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
+
   try {
     const existingUser = await userModel.findOne({ email });
 
@@ -19,11 +20,12 @@ const registerUser = async (req, res) => {
       return res.status(400).json("Email already exist!");
     }
 
-    // validation
+    // validating empty fields
     if (!name || !email || !password) {
       return res.status(400).json("All fields should be filled!");
     }
 
+    // validating email
     if (!validator.isEmail(email)) {
       res.status(400).json("Invalid Email!");
     }
@@ -32,7 +34,9 @@ const registerUser = async (req, res) => {
     if (!validator.isStrongPassword(password)) {
       return res
         .status(400)
-        .json("Your password isn't strong.Give a strong password!");
+        .json(
+          "Your password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one symbol. Please try again with a stronger password."
+        );
     }
 
     // hashing password
@@ -49,8 +53,7 @@ const registerUser = async (req, res) => {
       .status(200)
       .json({ id: user._id, name, email, password: user.password, token });
   } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
+    res.status(500).json(err); //server error
   }
 };
 
@@ -59,7 +62,7 @@ const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const existingUser = userModel.findOne({ email });
+    const existingUser = await userModel.findOne({ email });
 
     if (!existingUser) {
       return res.status(400).json("Invalid email or password!");
@@ -79,7 +82,7 @@ const loginUser = async (req, res) => {
     const token = createToken(existingUser._id);
 
     res.status(200).json({
-      id: existingUser._id,
+      _id: existingUser._id,
       name: existingUser.name,
       email,
       password: existingUser.password,
@@ -94,6 +97,7 @@ const loginUser = async (req, res) => {
 const findUser = async (req, res) => {
   const { userId } = req.params;
 
+  // checking mongodb id validation
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json("Invalid Id!");
   }
@@ -112,7 +116,7 @@ const getAllUsers = async (req, res) => {
   try {
     const users = await userModel.find({});
 
-    res.status(500).json(users);
+    res.status(200).json(users);
   } catch (err) {
     res.status(500).json(err);
   }
